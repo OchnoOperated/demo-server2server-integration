@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ochno API PoC — Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    /* ── Hub detail drawer ───────────────────────────────────────────────── */
+    .drawer {
+      position: fixed;
+      top: 56px;
+      right: 0;
+      bottom: 0;
+      width: 400px;
+      background: var(--color-surface);
+      border-left: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.22s ease;
+      z-index: 100;
+      overflow-y: auto;
+    }
+    .drawer.-open { transform: translateX(0); }
+
+    .drawer__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      background: var(--color-surface);
+      z-index: 1;
+    }
+
+    .drawer__close {
+      background: none;
+      border: none;
+      color: var(--color-muted);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .drawer__close:hover { color: var(--color-text); }
+
+    .drawer__section {
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .drawer__section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-muted);
+      margin-bottom: var(--space-sm);
+    }
+
+    /* ── Port grid ───────────────────────────────────────────────────────── */
+    .port-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-sm);
+    }
+
+    .port-tile {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-sm);
+      text-align: center;
+      font-size: 11px;
+    }
+    .port-tile.-active { border-color: var(--color-accent); background: var(--color-accent-dim); }
+    .port-tile.-connected { border-color: var(--color-success); }
+
+    .port-tile__label {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: var(--space-xs);
+    }
+    .port-tile__status { color: var(--color-muted); }
+
+    /* ── User card ───────────────────────────────────────────────────────── */
+    .user-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .user-card__avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--color-accent-dim);
+      border: 1px solid var(--color-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+    .user-card__info { flex: 1; min-width: 0; }
+    .user-card__name { font-weight: 600; font-size: 14px; }
+    .user-card__email { color: var(--color-muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header__brand">
+        <div class="header__brand-dot"></div>
+        Ochno API PoC
+        <span class="badge -accent" style="margin-left:8px;font-size:10px">Server-to-Server</span>
+      </div>
+      <div class="header__user">
+        <span id="header-email"></span>
+      </div>
+    </header>
+
+    <!-- Page -->
+    <main class="page">
+
+      <div id="error-box" class="error-box"></div>
+
+      <!-- S2S auth indicator -->
+      <div class="grid-2 mb-xl">
+
+        <!-- Server auth status -->
+        <div>
+          <p class="section-title">Integration</p>
+          <div class="user-card">
+            <div class="user-card__avatar" style="font-size:20px">🖥</div>
+            <div class="user-card__info">
+              <div class="user-card__name">Server-to-Server</div>
+              <div class="user-card__email">Authenticated via client_credentials</div>
+            </div>
+            <span class="badge -success">● Active</span>
+          </div>
+        </div>
+
+        <!-- Account groups -->
+        <div>
+          <p class="section-title">Account groups</p>
+          <div class="panel">
+            <div id="groups-list">
+              <div class="panel__empty">
+                <span class="skeleton" style="width:55%;height:12px;display:block;margin:0 auto"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hubs + Spaces row -->
+      <div class="grid-2 mb-xl">
+
+        <!-- Hubs -->
+        <div>
+          <p class="section-title">Hubs</p>
+          <div class="panel">
+            <div class="panel__header">
+              <span class="panel__title">All hubs</span>
+              <span class="panel__count" id="hubs-count">—</span>
+              <div style="display:flex;gap:var(--space-sm)">
+                <select id="space-filter" class="btn -ghost" style="padding:4px 8px;font-size:12px">
+                  <option value="">All spaces</option>
+                </select>
+              </div>
+            </div>
+            <div id="hubs-list">
+              <div class="panel__empty">
+                <span class="skeleton" style="width:60%;height:12px;display:block;margin:0 auto 8px"></span>
+                <span class="skeleton" style="width:80%;height:12px;display:block;margin:0 auto 8px"></span>
+                <span class="skeleton" style="width:45%;height:12px;display:block;margin:0 auto"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spaces -->
+        <div>
+          <p class="section-title">Spaces</p>
+          <div class="panel">
+            <div class="panel__header">
+              <span class="panel__title">All spaces</span>
+              <span class="panel__count" id="spaces-count">—</span>
+            </div>
+            <div id="spaces-list">
+              <div class="panel__empty">
+                <span class="skeleton" style="width:60%;height:12px;display:block;margin:0 auto 8px"></span>
+                <span class="skeleton" style="width:40%;height:12px;display:block;margin:0 auto"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Event feed (shown if webhooks enabled) -->
+      <div id="events-section" style="display:none">
+        <p class="section-title">Live events <span class="badge -success" style="vertical-align:middle">● Live</span></p>
+        <div class="panel mb-xl">
+          <div class="panel__header">
+            <span class="panel__title">Webhook event feed</span>
+            <span id="events-count" class="panel__count">0</span>
+            <button class="btn -ghost" style="font-size:11px" onclick="clearEvents()">Clear</button>
+          </div>
+          <div id="event-feed" class="event-feed">
+            <div class="panel__placeholder">Waiting for events…</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Hub detail drawer -->
+  <div id="hub-drawer" class="drawer">
+    <div class="drawer__header">
+      <div>
+        <div style="font-weight:600;font-size:15px" id="drawer-title">Hub</div>
+        <div style="font-size:11px;color:var(--color-muted);font-family:var(--font-mono)" id="drawer-id"></div>
+      </div>
+      <button class="drawer__close" onclick="closeDrawer()">×</button>
+    </div>
+    <div id="drawer-content">
+      <div class="panel__placeholder">Loading…</div>
+    </div>
+  </div>
+
+  <!-- socket.io (always loaded, no-ops if webhooks disabled) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/js/dashboard.js"></script>
+</body>
+</html>

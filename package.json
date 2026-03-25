@@ -1,0 +1,32 @@
+{
+  "name": "ochno-delegated-api-poc",
+  "title": "Ochno Delegated Access API PoC",
+  "description": "Showcases the Ochno Open API using OAuth2 delegated access (on behalf of a user)",
+  "version": "0.1.0",
+  "author": "OCHNO",
+  "license": "Proprietary",
+  "engines": {
+    "node": ">=24",
+    "npm": ">=11"
+  },
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "build:clean": "rimraf ./build && npm run build",
+    "start": "npm run build:clean && node build/index.js"
+  },
+  "dependencies": {
+    "dotenv": "17.2.2",
+    "express": "5.1.0",
+    "socket.io": "4.8.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.3",
+    "@types/node": "22.18.1",
+    "rimraf": "6.0.1",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2"
+  }
+}

@@ -49,7 +49,7 @@ src/
 In your Ochno Operated account, create an OAuth2 application with:
 
 - **Grant type:** `client_credentials`
-- **Required scopes:** `sub email accounts:read accounts:write hubs:read hubs:write`
+- **Required scopes:** `sub accounts:read accounts:write hubs:read hubs:write`
 - No redirect URI needed
 
 ### 2. Configure environment
